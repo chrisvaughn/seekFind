@@ -21,7 +21,11 @@ const (
 	// diagonalRTLReversed
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyz"
+const (
+	letterBytes     = "abcdefghijklmnopqrstuvwxyz"
+	fitWordAttempts = 500
+	boardAttempts   = 1000
+)
 
 type gameBoard [][]string
 
@@ -66,12 +70,15 @@ func fitHorizontal(board *gameBoard, word string) bool {
 		iy = rand.Intn(y)
 		found = iy+len(word) < y
 		attempts++
-		if attempts > 10 {
+		if attempts > fitWordAttempts {
 			return false
 		}
 	}
 
 	for j, c := range strings.Split(word, "") {
+		if c == " " {
+
+		}
 		if (*board)[ix][iy+j] == "" {
 			(*board)[ix][iy+j] = c
 		} else {
@@ -96,7 +103,7 @@ func fitVertical(board *gameBoard, word string) bool {
 		iy = rand.Intn(y)
 		found = ix+len(word) < x
 		attempts++
-		if attempts > 10 {
+		if attempts > fitWordAttempts {
 			return false
 		}
 	}
@@ -117,15 +124,16 @@ func fitVerticalReversed(board *gameBoard, word string) bool {
 
 func fitWord(board *gameBoard, word string) bool {
 	wordDirection := rand.Intn(endDirection)
+	w := strings.Replace(word, " ", "", -1)
 	switch wordDirection {
 	case horizontal:
-		return fitHorizontal(board, word)
+		return fitHorizontal(board, w)
 	case horizontalReversed:
-		return fitHorizontalReversed(board, word)
+		return fitHorizontalReversed(board, w)
 	case vertical:
-		return fitVertical(board, word)
+		return fitVertical(board, w)
 	case verticalReversed:
-		return fitVerticalReversed(board, word)
+		return fitVerticalReversed(board, w)
 	}
 	return false
 }
@@ -140,8 +148,8 @@ func buildBoard(board *gameBoard, words []string) bool {
 }
 
 func getRandomLetter() string {
-	// return string(letterBytes[rand.Intn(len(letterBytes))])
-	return "$"
+	return string(letterBytes[rand.Intn(len(letterBytes))])
+	// return "$"
 }
 
 func fillBoard(board *gameBoard) {
@@ -203,7 +211,7 @@ func main() {
 		return
 	}
 	fmt.Println(wordList)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < boardAttempts; i++ {
 		board := makeBoard(25, 25)
 		built := buildBoard(&board, wordList)
 		if built {
