@@ -10,15 +10,14 @@ import (
 )
 
 const (
-	horizontal         int = iota // 0
-	horizontalReversed            // 1
-	vertical                      // 2
-	verticalReversed              // 3
-	endDirection
-	// diagonalLTR
-	// diagonalLTRReversed
-	// diagonalRTL
-	// diagonalRTLReversed
+	horizontal int = iota
+	horizontalReversed
+	vertical
+	verticalReversed
+	diagonalLTR
+	diagonalLTRReversed
+	diagonalRTL
+	diagonalRTLReversed
 )
 
 const (
@@ -76,9 +75,6 @@ func fitHorizontal(board *gameBoard, word string) bool {
 	}
 
 	for j, c := range strings.Split(word, "") {
-		if c == " " {
-
-		}
 		if (*board)[ix][iy+j] == "" {
 			(*board)[ix][iy+j] = c
 		} else {
@@ -122,8 +118,68 @@ func fitVerticalReversed(board *gameBoard, word string) bool {
 	return fitVertical(board, reverse(word))
 }
 
+func fitDiagonalLTR(board *gameBoard, word string) bool {
+	x := len(*board)
+	y := len((*board)[0])
+	var ix, iy int
+	found := false
+	attempts := 0
+	for !found {
+		ix = rand.Intn(x)
+		iy = rand.Intn(y)
+		found = ix+len(word) < x && iy+len(word) < y
+		attempts++
+		if attempts > fitWordAttempts {
+			return false
+		}
+	}
+
+	for j, c := range strings.Split(word, "") {
+		if (*board)[ix+j][iy+j] == "" {
+			(*board)[ix+j][iy+j] = c
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+func fitDiagonalLTRReversed(board *gameBoard, word string) bool {
+	return fitDiagonalLTR(board, reverse(word))
+}
+
+func fitDiagonalRTL(board *gameBoard, word string) bool {
+	x := len(*board)
+	y := len((*board)[0])
+	var ix, iy int
+	found := false
+	attempts := 0
+	for !found {
+		ix = rand.Intn(x)
+		iy = len(word) + rand.Intn(y-len(word))
+		found = ix+len(word) < x && iy-len(word) >= 0
+		attempts++
+		if attempts > fitWordAttempts {
+			return false
+		}
+	}
+
+	for j, c := range strings.Split(word, "") {
+		if (*board)[ix+j][iy-j] == "" {
+			(*board)[ix+j][iy-j] = c
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+func fitDiagonalRTLReversed(board *gameBoard, word string) bool {
+	return fitDiagonalRTL(board, reverse(word))
+}
+
 func fitWord(board *gameBoard, word string) bool {
-	wordDirection := rand.Intn(endDirection)
+	wordDirection := rand.Intn(diagonalRTLReversed + 1)
 	w := strings.Replace(word, " ", "", -1)
 	switch wordDirection {
 	case horizontal:
@@ -134,6 +190,14 @@ func fitWord(board *gameBoard, word string) bool {
 		return fitVertical(board, w)
 	case verticalReversed:
 		return fitVerticalReversed(board, w)
+	case diagonalLTR:
+		return fitDiagonalLTR(board, w)
+	case diagonalLTRReversed:
+		return fitDiagonalLTRReversed(board, w)
+	case diagonalRTL:
+		return fitDiagonalRTL(board, w)
+	case diagonalRTLReversed:
+		return fitDiagonalRTLReversed(board, w)
 	}
 	return false
 }
@@ -149,7 +213,7 @@ func buildBoard(board *gameBoard, words []string) bool {
 
 func getRandomLetter() string {
 	return string(letterBytes[rand.Intn(len(letterBytes))])
-	// return "$"
+	// return "."
 }
 
 func fillBoard(board *gameBoard) {
@@ -212,7 +276,7 @@ func main() {
 	}
 	fmt.Println(wordList)
 	for i := 0; i < boardAttempts; i++ {
-		board := makeBoard(25, 25)
+		board := makeBoard(30, 30)
 		built := buildBoard(&board, wordList)
 		if built {
 			fillBoard(&board)
