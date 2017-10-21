@@ -22,8 +22,8 @@ const (
 
 const (
 	letterBytes     = "abcdefghijklmnopqrstuvwxyz"
-	fitWordAttempts = 500
-	boardAttempts   = 1000
+	fitWordAttempts = 1000
+	boardAttempts   = 5000
 )
 
 type gameBoard [][]string
@@ -275,14 +275,19 @@ func main() {
 		return
 	}
 	fmt.Println(wordList)
+	boardSize := 15
+	maxBoardSize := 35
 	for i := 0; i < boardAttempts; i++ {
-		board := makeBoard(30, 30)
+		if (i%1000) == 0 && boardSize < maxBoardSize {
+			boardSize += 5
+		}
+		board := makeBoard(boardSize, boardSize)
 		built := buildBoard(&board, wordList)
 		if built {
 			fillBoard(&board)
 			printBoard(&board)
 			htmlBoard(&board, wordList, "output.html")
-			fmt.Println("output.html saved")
+			fmt.Println("output.html saved with board size:", boardSize)
 			return
 		}
 	}
