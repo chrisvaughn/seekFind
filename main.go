@@ -22,11 +22,16 @@ const (
 
 const (
 	letterBytes     = "abcdefghijklmnopqrstuvwxyz"
-	fitWordAttempts = 1000
-	boardAttempts   = 5000
+	fitWordAttempts = 10000
 )
 
 type gameBoard [][]string
+
+type placement struct {
+	x, y   int
+	letter string
+	style  int
+}
 
 func readWordList(path string) (lines []string, err error) {
 	file, err := os.Open(path)
@@ -42,12 +47,23 @@ func readWordList(path string) (lines []string, err error) {
 	return lines, scanner.Err()
 }
 
-func makeBoard(x int, y int) (board gameBoard) {
-	board = make(gameBoard, y)
+func makeBoard(x int, y int) *gameBoard {
+	board := make(gameBoard, y)
 	for i := range board {
 		board[i] = make([]string, x)
 	}
-	return
+	return &board
+}
+
+func copyBoard(board *gameBoard) *gameBoard {
+	cpy := make(gameBoard, len((*board)))
+	for i := range *board {
+		cpy[i] = make([]string, len((*board)[i]))
+		for j := range (*board)[i] {
+			cpy[i][j] = (*board)[i][j]
+		}
+	}
+	return &cpy
 }
 
 func reverse(s string) string {
@@ -58,157 +74,177 @@ func reverse(s string) string {
 	return string(chars)
 }
 
-func fitHorizontal(board *gameBoard, word string) bool {
-	x := len(*board)
-	y := len((*board)[0])
-	var ix, iy int
+func fitHorizontal(word string, maxX, maxY int) []placement {
+	placements := make([]placement, len(word))
+	split := strings.Split(word, "")
 	found := false
-	attempts := 0
-	for !found {
-		ix = rand.Intn(x)
-		iy = rand.Intn(y)
-		found = iy+len(word) < y
-		attempts++
-		if attempts > fitWordAttempts {
-			return false
+	count := 0
+	for !found && count < fitWordAttempts {
+		count++
+		ix := rand.Intn(maxX)
+		iy := rand.Intn(maxY)
+		if iy+len(word) >= maxY {
+			continue
 		}
-	}
-
-	for j, c := range strings.Split(word, "") {
-		if (*board)[ix][iy+j] == "" {
-			(*board)[ix][iy+j] = c
-		} else {
-			return false
+		for j, c := range split {
+			placements[j] = placement{
+				ix,
+				iy + j,
+				c,
+				horizontal,
+			}
 		}
+		found = true
 	}
-	return true
+	if count >= fitWordAttempts {
+		placements = nil
+	}
+	return placements
 }
 
-func fitHorizontalReversed(board *gameBoard, word string) bool {
-	return fitHorizontal(board, reverse(word))
-}
-
-func fitVertical(board *gameBoard, word string) bool {
-	x := len(*board)
-	y := len((*board)[0])
-	var ix, iy int
+func fitVertical(word string, maxX, maxY int) []placement {
+	placements := make([]placement, len(word))
+	split := strings.Split(word, "")
 	found := false
-	attempts := 0
-	for !found {
-		ix = rand.Intn(x)
-		iy = rand.Intn(y)
-		found = ix+len(word) < x
-		attempts++
-		if attempts > fitWordAttempts {
-			return false
+	count := 0
+	for !found && count < fitWordAttempts {
+		count++
+		ix := rand.Intn(maxX)
+		iy := rand.Intn(maxY)
+		if ix+len(word) >= maxX {
+			continue
 		}
-	}
-
-	for j, c := range strings.Split(word, "") {
-		if (*board)[ix+j][iy] == "" {
-			(*board)[ix+j][iy] = c
-		} else {
-			return false
+		for j, c := range split {
+			placements[j] = placement{
+				ix + j,
+				iy,
+				c,
+				vertical,
+			}
 		}
+		found = true
 	}
-	return true
+	if count >= fitWordAttempts {
+		placements = nil
+	}
+	return placements
 }
 
-func fitVerticalReversed(board *gameBoard, word string) bool {
-	return fitVertical(board, reverse(word))
-}
-
-func fitDiagonalLTR(board *gameBoard, word string) bool {
-	x := len(*board)
-	y := len((*board)[0])
-	var ix, iy int
+func fitDiagonalLTR(word string, maxX, maxY int) []placement {
+	placements := make([]placement, len(word))
+	split := strings.Split(word, "")
 	found := false
-	attempts := 0
-	for !found {
-		ix = rand.Intn(x)
-		iy = rand.Intn(y)
-		found = ix+len(word) < x && iy+len(word) < y
-		attempts++
-		if attempts > fitWordAttempts {
-			return false
+	count := 0
+	for !found && count < fitWordAttempts {
+		count++
+		ix := rand.Intn(maxX)
+		iy := rand.Intn(maxY)
+		if ix+len(word) >= maxX || iy+len(word) >= maxY {
+			continue
 		}
-	}
-
-	for j, c := range strings.Split(word, "") {
-		if (*board)[ix+j][iy+j] == "" {
-			(*board)[ix+j][iy+j] = c
-		} else {
-			return false
+		for j, c := range split {
+			placements[j] = placement{
+				ix + j,
+				iy + j,
+				c,
+				diagonalLTR,
+			}
 		}
+		found = true
 	}
-	return true
+	if count >= fitWordAttempts {
+		placements = nil
+	}
+	return placements
 }
 
-func fitDiagonalLTRReversed(board *gameBoard, word string) bool {
-	return fitDiagonalLTR(board, reverse(word))
-}
-
-func fitDiagonalRTL(board *gameBoard, word string) bool {
-	x := len(*board)
-	y := len((*board)[0])
-	var ix, iy int
+func fitDiagonalRTL(word string, maxX, maxY int) []placement {
+	placements := make([]placement, len(word))
+	split := strings.Split(word, "")
 	found := false
-	attempts := 0
-	for !found {
-		ix = rand.Intn(x)
-		iy = len(word) + rand.Intn(y-len(word))
-		found = ix+len(word) < x && iy-len(word) >= 0
-		attempts++
-		if attempts > fitWordAttempts {
-			return false
+	count := 0
+	for !found && count < fitWordAttempts {
+		count++
+		ix := rand.Intn(maxX)
+		iy := rand.Intn(maxY)
+		if ix+len(word) >= maxX || iy-len(word) < 0 {
+			continue
 		}
-	}
-
-	for j, c := range strings.Split(word, "") {
-		if (*board)[ix+j][iy-j] == "" {
-			(*board)[ix+j][iy-j] = c
-		} else {
-			return false
+		for j, c := range split {
+			placements[j] = placement{
+				ix + j,
+				iy - j,
+				c,
+				diagonalRTL,
+			}
 		}
+		found = true
 	}
-	return true
-}
-
-func fitDiagonalRTLReversed(board *gameBoard, word string) bool {
-	return fitDiagonalRTL(board, reverse(word))
+	if count >= fitWordAttempts {
+		placements = nil
+	}
+	return placements
 }
 
 func fitWord(board *gameBoard, word string) bool {
 	wordDirection := rand.Intn(diagonalRTLReversed + 1)
 	w := strings.Replace(word, " ", "", -1)
+	var placements []placement
+	x := len((*board))
+	y := len((*board)[0])
 	switch wordDirection {
 	case horizontal:
-		return fitHorizontal(board, w)
+		placements = fitHorizontal(w, x, y)
 	case horizontalReversed:
-		return fitHorizontalReversed(board, w)
+		placements = fitHorizontal(reverse(w), x, y)
 	case vertical:
-		return fitVertical(board, w)
+		placements = fitVertical(w, x, y)
 	case verticalReversed:
-		return fitVerticalReversed(board, w)
+		placements = fitVertical(reverse(w), x, y)
 	case diagonalLTR:
-		return fitDiagonalLTR(board, w)
+		placements = fitDiagonalLTR(w, x, y)
 	case diagonalLTRReversed:
-		return fitDiagonalLTRReversed(board, w)
+		placements = fitDiagonalLTR(reverse(w), x, y)
 	case diagonalRTL:
-		return fitDiagonalRTL(board, w)
+		placements = fitDiagonalRTL(w, x, y)
 	case diagonalRTLReversed:
-		return fitDiagonalRTLReversed(board, w)
+		placements = fitDiagonalRTL(reverse(w), x, y)
 	}
-	return false
-}
-
-func buildBoard(board *gameBoard, words []string) bool {
-	for _, word := range words {
-		if !fitWord(board, word) {
+	if placements == nil {
+		return false
+	}
+	for _, p := range placements {
+		if (*board)[p.x][p.y] == "" || (*board)[p.x][p.y] == p.letter {
+			(*board)[p.x][p.y] = p.letter
+		} else {
 			return false
 		}
 	}
 	return true
+}
+
+func buildBoard(size int, words []string) (board *gameBoard) {
+	for _, word := range words {
+		count := 0
+		fit := false
+		var stateBeforeWord *gameBoard
+
+		if board == nil {
+			board = makeBoard(size, size)
+		}
+
+		for !fit && count < fitWordAttempts {
+			count++
+			stateBeforeWord = copyBoard(board)
+			fit = fitWord(stateBeforeWord, word)
+		}
+		if fit {
+			board = stateBeforeWord
+		} else {
+			return nil
+		}
+	}
+	return board
 }
 
 func getRandomLetter() string {
@@ -276,20 +312,13 @@ func main() {
 	}
 	fmt.Println(wordList)
 	boardSize := 15
-	maxBoardSize := 35
-	for i := 0; i < boardAttempts; i++ {
-		if (i%1000) == 0 && boardSize < maxBoardSize {
-			boardSize += 5
-		}
-		board := makeBoard(boardSize, boardSize)
-		built := buildBoard(&board, wordList)
-		if built {
-			fillBoard(&board)
-			printBoard(&board)
-			htmlBoard(&board, wordList, "output.html")
-			fmt.Println("output.html saved with board size:", boardSize)
-			return
-		}
+	board := buildBoard(boardSize, wordList)
+	if board != nil {
+		fillBoard(board)
+		printBoard(board)
+		htmlBoard(board, wordList, "output.html")
+		fmt.Println("output.html saved with board size:", boardSize)
+	} else {
+		fmt.Println("Error: couldn't fit words")
 	}
-	fmt.Println("Error: couldn't fit words")
 }
