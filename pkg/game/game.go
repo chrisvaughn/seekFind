@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"bufio"
@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"strings"
-	"time"
 )
 
 const (
@@ -25,7 +24,8 @@ const (
 	fitWordAttempts = 10000
 )
 
-type gameBoard [][]string
+// Board holds the state of the word search
+type Board [][]string
 
 type placement struct {
 	x, y   int
@@ -33,7 +33,8 @@ type placement struct {
 	style  int
 }
 
-func readWordList(path string) (lines []string, err error) {
+// ReadWordList ingests a list of words from a word file
+func ReadWordList(path string) (lines []string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -47,16 +48,16 @@ func readWordList(path string) (lines []string, err error) {
 	return lines, scanner.Err()
 }
 
-func makeBoard(x int, y int) *gameBoard {
-	board := make(gameBoard, y)
+func makeBoard(x int, y int) *Board {
+	board := make(Board, y)
 	for i := range board {
 		board[i] = make([]string, x)
 	}
 	return &board
 }
 
-func copyBoard(board *gameBoard) *gameBoard {
-	cpy := make(gameBoard, len((*board)))
+func copyBoard(board *Board) *Board {
+	cpy := make(Board, len((*board)))
 	for i := range *board {
 		cpy[i] = make([]string, len((*board)[i]))
 		for j := range (*board)[i] {
@@ -186,7 +187,7 @@ func fitDiagonalRTL(word string, maxX, maxY int) []placement {
 	return placements
 }
 
-func fitWord(board *gameBoard, word string) bool {
+func fitWord(board *Board, word string) bool {
 	wordDirection := rand.Intn(diagonalRTLReversed + 1)
 	w := strings.Replace(word, " ", "", -1)
 	var placements []placement
@@ -223,11 +224,12 @@ func fitWord(board *gameBoard, word string) bool {
 	return true
 }
 
-func buildBoard(size int, words []string) (board *gameBoard) {
+// BuildBoard takes a size and a slice of words and returns a Board
+func BuildBoard(size int, words []string) (board *Board) {
 	for _, word := range words {
 		count := 0
 		fit := false
-		var stateBeforeWord *gameBoard
+		var stateBeforeWord *Board
 
 		if board == nil {
 			board = makeBoard(size, size)
@@ -244,6 +246,7 @@ func buildBoard(size int, words []string) (board *gameBoard) {
 			return nil
 		}
 	}
+	fillBoard(board)
 	return board
 }
 
@@ -252,7 +255,7 @@ func getRandomLetter() string {
 	// return "."
 }
 
-func fillBoard(board *gameBoard) {
+func fillBoard(board *Board) {
 	for i := range *board {
 		for j := range (*board)[i] {
 			if (*board)[i][j] == "" {
@@ -262,7 +265,8 @@ func fillBoard(board *gameBoard) {
 	}
 }
 
-func printBoard(board *gameBoard) {
+// PrintBoard prints an ascii version of the board - good for debugging
+func PrintBoard(board *Board) {
 	for i := range *board {
 		for j := range (*board)[i] {
 			c := (*board)[i][j]
@@ -275,7 +279,8 @@ func printBoard(board *gameBoard) {
 	}
 }
 
-func htmlBoard(board *gameBoard, words []string, output string) {
+//HTMLBoard generates an HTML file ready to print
+func HTMLBoard(board *Board, words []string, output string) {
 	f, err := os.Create(output)
 	if err != nil {
 		fmt.Println("Error:", err.Error())
@@ -301,24 +306,4 @@ func htmlBoard(board *gameBoard, words []string, output string) {
 	}
 	fmt.Fprintln(f, "</ul>")
 	fmt.Fprintln(f, "</div>")
-}
-
-func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-	wordList, err := readWordList("wordlist.txt")
-	if err != nil {
-		fmt.Println("Error:", err.Error())
-		return
-	}
-	fmt.Println(wordList)
-	boardSize := 15
-	board := buildBoard(boardSize, wordList)
-	if board != nil {
-		fillBoard(board)
-		printBoard(board)
-		htmlBoard(board, wordList, "output.html")
-		fmt.Println("output.html saved with board size:", boardSize)
-	} else {
-		fmt.Println("Error: couldn't fit words")
-	}
 }
