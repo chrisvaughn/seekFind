@@ -224,6 +224,21 @@ func fitWord(board *Board, word string) bool {
 	return true
 }
 
+func getRandomLetter() string {
+	return string(letterBytes[rand.Intn(len(letterBytes))])
+	// return "."
+}
+
+func fillBoard(board *Board) {
+	for i := range *board {
+		for j := range (*board)[i] {
+			if (*board)[i][j] == "" {
+				(*board)[i][j] = getRandomLetter()
+			}
+		}
+	}
+}
+
 // BuildBoard takes a size and a slice of words and returns a Board
 func BuildBoard(size int, words []string) (board *Board) {
 	for _, word := range words {
@@ -248,21 +263,6 @@ func BuildBoard(size int, words []string) (board *Board) {
 	}
 	fillBoard(board)
 	return board
-}
-
-func getRandomLetter() string {
-	return string(letterBytes[rand.Intn(len(letterBytes))])
-	// return "."
-}
-
-func fillBoard(board *Board) {
-	for i := range *board {
-		for j := range (*board)[i] {
-			if (*board)[i][j] == "" {
-				(*board)[i][j] = getRandomLetter()
-			}
-		}
-	}
 }
 
 // PrintBoard prints an ascii version of the board - good for debugging

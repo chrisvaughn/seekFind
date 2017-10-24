@@ -16,7 +16,7 @@ func main() {
 		return
 	}
 	fmt.Println(wordList)
-	boardSize := 20
+	boardSize := 25
 	board := game.BuildBoard(boardSize, wordList)
 	if board != nil {
 		game.PrintBoard(board)
