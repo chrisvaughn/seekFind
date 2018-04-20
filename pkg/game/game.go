@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	letterBytes     = "abcdefghijklmnopqrstuvwxyz"
+	letterBytes     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	fitWordAttempts = 10000
 )
 
@@ -43,7 +43,7 @@ func ReadWordList(path string) (lines []string, err error) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		lines = append(lines, strings.ToLower(scanner.Text()))
+		lines = append(lines, strings.ToUpper(scanner.Text()))
 	}
 	return lines, scanner.Err()
 }
